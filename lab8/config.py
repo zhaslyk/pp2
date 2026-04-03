@@ -5,5 +5,5 @@ DB_CONFIG = {
     "dbname":   "phonebook_db"
     ,
     "user":     "postgres",
-    "password": "Xogarys2008@",
+    "password": "123456",
 }
