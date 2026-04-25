@@ -1,137 +1,133 @@
 import pygame
 import random
+import sys
 
-# size of one grid cell (snake moves in steps of this size)
-size = 30
-half_size = size // 2
+# Initialize pygame
+pygame.init()
 
-# window resolution
-res = 750
-# make resolution divisible by cell size (keeps grid aligned)
-res = res // size // 2*2*size + size
+# Screen settings
+WIDTH = 600
+HEIGHT = 600
+CELL_SIZE = 20
 
-FPS = 12  # frames per second
+# Colors
+BLACK = (0, 0, 0)
+GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+WHITE = (255, 255, 255)
+
+# Create screen
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Snake Game")
+
+# Clock for controlling speed
 clock = pygame.time.Clock()
 
-# create game window
-screen = pygame.display.set_mode((res, res))
+# Font
+font = pygame.font.SysFont("Arial", 24)
 
-# controls how often the snake moves (higher = slower)
-snake_frame_speed = 0.5
-frame_counter = 0  # counts frames
+# Snake initial position
+snake = [(100, 100), (80, 100), (60, 100)]
+direction = (20, 0)
 
-score = 0  # player score
+# Food position
+food = None
 
-# starting position of the snake (center of screen)
-snake_start_pos = res // 2 - half_size
-
-length = 4  # initial snake length
-
-# initial movement direction (down)
-DirX, DirY = 0, size
-
-# snake body (list of coordinates)
-snake = [(snake_start_pos, snake_start_pos)]
-
-# initial apple position
-apple = (
-    random.randrange(0, res - size, size),
-    random.randrange(0, res - size, size)
-)
+# Score and level
+score = 0
+level = 1
+speed = 5
 
 
-# function to generate a new apple
-def apple_gen():
-    global apple, score, length
+# Function to generate food NOT on snake
+def generate_food():
     while True:
-        # generate random position
-        apple = (
-            random.randrange(0, res - size, size),
-            random.randrange(0, res - size, size)
-        )
-        # make sure apple does not spawn inside the snake
-        if apple not in snake:
-            break
-
-    score += 1   # increase score
-    length += 1  # increase snake lengthw
+        x = random.randrange(0, WIDTH, CELL_SIZE)
+        y = random.randrange(0, HEIGHT, CELL_SIZE)
+        if (x, y) not in snake:
+            return (x, y)
 
 
-# main game loop
+food = generate_food()
+
+
+# Draw everything
+def draw():
+    screen.fill(BLACK)
+
+    # Draw snake
+    for segment in snake:
+        pygame.draw.rect(screen, GREEN, (*segment, CELL_SIZE, CELL_SIZE))
+
+    # Draw food
+    pygame.draw.rect(screen, RED, (*food, CELL_SIZE, CELL_SIZE))
+
+    # Draw score and level
+    score_text = font.render(f"Score: {score}", True, WHITE)
+    level_text = font.render(f"Level: {level}", True, WHITE)
+
+    screen.blit(score_text, (10, 10))
+    screen.blit(level_text, (10, 40))
+
+    pygame.display.flip()
+
+
+# Game over function
+def game_over():
+    text = font.render("GAME OVER", True, RED)
+    screen.blit(text, (WIDTH // 2 - 80, HEIGHT // 2))
+    pygame.display.flip()
+    pygame.time.delay(2000)
+    pygame.quit()
+    sys.exit()
+
+
+# Main loop
 while True:
-    # update window title with score
-    pygame.display.set_caption(f"Snake - Score: {score}")
-    
-    # handle events (like closing the window)
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-            exit()
+            sys.exit()
 
-    # clear screen (black background)
-    screen.fill((0, 0, 0))
-    
-    # draw snake (each segment is a square)
-    [pygame.draw.rect(screen, (0, 160, 0), (x, y, size, size)) for x, y in snake]
+        # Control snake
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP and direction != (0, 20):
+                direction = (0, -20)
+            elif event.key == pygame.K_DOWN and direction != (0, -20):
+                direction = (0, 20)
+            elif event.key == pygame.K_LEFT and direction != (20, 0):
+                direction = (-20, 0)
+            elif event.key == pygame.K_RIGHT and direction != (-20, 0):
+                direction = (20, 0)
 
-    # draw apple (circle)
-    pygame.draw.circle(
-        screen,
-        (160, 0, 0),
-        (apple[0] + half_size, apple[1] + half_size),
-        half_size
-    )
+    # Move snake
+    head_x = snake[0][0] + direction[0]
+    head_y = snake[0][1] + direction[1]
+    new_head = (head_x, head_y)
 
-    # move snake every few frames (based on snake_frame_speed)
-    if frame_counter % snake_frame_speed == 0:
-        # calculate new head position
-        newX = snake[-1][0] + DirX
-        newY = snake[-1][1] + DirY
+    #  Check wall collision
+    if head_x < 0 or head_x >= WIDTH or head_y < 0 or head_y >= HEIGHT:
+        game_over()
 
-        # add new head to the snake
-        snake.append((newX, newY))
+    #  Check self collision
+    if new_head in snake:
+        game_over()
 
-        # trim snake to maintain its length
-        snake = snake[-length-1:]
+    snake.insert(0, new_head)
 
-    # check if snake eats the apple
-    if apple[0] == snake[-1][0] and apple[1] == snake[-1][1]:
-        apple_gen()
-    
-    # handle keyboard input
-    key = pygame.key.get_pressed()
+    #  Check food collision
+    if new_head == food:
+        score += 1
 
-    # W - move up (prevent reversing direction)
-    if key[pygame.K_w] and DirY != size:
-        DirX, DirY = 0, -size
+        # Level system (every 4 points)
+        if score % 4 == 0:
+            level += 1
+            speed += 2  # increase speed
 
-    # S - move down
-    elif key[pygame.K_s] and DirY != -size:
-        DirX, DirY = 0, size
+        food = generate_food()
+    else:
+        snake.pop()
 
-    # A - move left
-    elif key[pygame.K_a] and DirX != size:
-        DirX, DirY = -size, 0
+    draw()
 
-    # D - move right
-    elif key[pygame.K_d] and DirX != -size:
-        DirX, DirY = size, 0
-
-    # check for collision:
-    # - hitting walls
-    # - hitting itself
-    if (
-        snake[-1][0] <= -size or
-        snake[-1][0] >= res or
-        snake[-1][1] <= -size or
-        snake[-1][1] >= res or
-        snake[-1] in snake[:-1]
-    ):
-        print("Game Over! Your score was:", score)
-        quit()
-
-    # control game speed
-    clock.tick(FPS)
-
-    # update display
-    pygame.display.flip()
+    clock.tick(speed)
