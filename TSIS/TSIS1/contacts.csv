@@ -1,0 +1,7 @@
+name,surname,email,birthday,group,phone,phone_type
+Aigerim,Suleimenova,aigerim.s@gmail.com,1995-03-15,Family,+77001234567,mobile
+Aigerim,Suleimenova,aigerim.s@gmail.com,1995-03-15,Family,+77221234567,home
+Daulet,Nurpeisov,daulet.work@company.kz,1990-11-20,Work,+77005551234,work
+Daulet,Nurpeisov,daulet.work@company.kz,1990-11-20,Work,+77005551235,mobile
+Madina,Almatova,madina.friend@mail.ru,2000-07-05,Friend,+77007778899,mobile
+Arman,Tolegenov,arman.other@yahoo.com,1988-12-30,Other,+77001112233,home
